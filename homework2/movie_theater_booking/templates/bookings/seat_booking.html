@@ -1,0 +1,352 @@
+{% extends 'bookings/base.html' %}
+
+{% block title %}Book Seats - {{ movie.title }} - CineBooker{% endblock %}
+
+{% block extra_css %}
+<style>
+    .movie-info-card {
+        background: linear-gradient(135deg, var(--dark-card) 0%, var(--dark-card-hover) 100%);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .movie-title-large {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+    }
+    
+    /* Theater Screen */
+    .screen-container {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .screen {
+        background: var(--gradient-gold);
+        height: 8px;
+        width: 80%;
+        max-width: 500px;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        box-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+    }
+    
+    .screen-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+    }
+    
+    /* Seat Grid */
+    .seats-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .seat-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        gap: 0.5rem;
+    }
+    
+    .row-label {
+        width: 30px;
+        color: var(--primary-gold);
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .seat {
+        width: 45px;
+        height: 40px;
+        border-radius: 8px 8px 4px 4px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        position: relative;
+    }
+    
+    .seat.available {
+        background: var(--dark-card-hover);
+        border: 2px solid rgba(212, 175, 55, 0.3);
+        color: var(--text-secondary);
+    }
+    
+    .seat.available:hover {
+        background: rgba(212, 175, 55, 0.2);
+        border-color: var(--primary-gold);
+        transform: scale(1.1);
+    }
+    
+    .seat.selected {
+        background: var(--gradient-gold);
+        color: var(--dark-bg);
+        transform: scale(1.1);
+        box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
+    }
+    
+    .seat.booked {
+        background: rgba(230, 57, 70, 0.3);
+        border: 2px solid rgba(230, 57, 70, 0.5);
+        color: rgba(230, 57, 70, 0.7);
+        cursor: not-allowed;
+    }
+    
+    /* Legend */
+    .legend {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin: 2rem 0;
+        flex-wrap: wrap;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+    
+    .legend-seat {
+        width: 25px;
+        height: 22px;
+        border-radius: 5px 5px 2px 2px;
+    }
+    
+    .legend-seat.available {
+        background: var(--dark-card-hover);
+        border: 2px solid rgba(212, 175, 55, 0.3);
+    }
+    
+    .legend-seat.selected {
+        background: var(--gradient-gold);
+    }
+    
+    .legend-seat.booked {
+        background: rgba(230, 57, 70, 0.3);
+        border: 2px solid rgba(230, 57, 70, 0.5);
+    }
+    
+    /* Booking Form */
+    .booking-form-card {
+        background: var(--dark-card);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+    }
+    
+    .form-section-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        color: var(--primary-gold);
+        margin-bottom: 1.5rem;
+    }
+    
+    #selected-seat-display {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-gold);
+        text-align: center;
+        padding: 1rem;
+        background: rgba(212, 175, 55, 0.1);
+        border-radius: 10px;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <!-- Back Button -->
+    <a href="{{ url_for('movie_list') }}" class="btn btn-outline-gold mb-4">
+        <i class="bi bi-arrow-left me-2"></i>Back to Movies
+    </a>
+    
+    <!-- Movie Info -->
+    <div class="movie-info-card">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="movie-title-large">{{ movie.title }}</h1>
+                <div class="meta-info mb-3">
+                    {% if movie.duration %}
+                    <span class="meta-item">
+                        <i class="bi bi-clock"></i> {{ movie.duration }} minutes
+                    </span>
+                    {% endif %}
+                    {% if movie.release_date %}
+                    <span class="meta-item">
+                        <i class="bi bi-calendar3"></i> {{ movie.release_date.strftime('%B %d, %Y') }}
+                    </span>
+                    {% endif %}
+                </div>
+                <p style="color: var(--text-secondary);">{{ movie.description }}</p>
+            </div>
+            <div class="col-md-4 text-center">
+                {% if movie.poster %}
+                <img src="{{ url_for('static', filename='images/posters/' + movie.poster) }}" 
+                     alt="{{ movie.title }} Poster" 
+                     style="max-width: 200px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                {% else %}
+                <div style="font-size: 6rem; color: var(--primary-gold); opacity: 0.5;">
+                    <i class="bi bi-camera-reels"></i>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Seat Selection -->
+    <div class="col-lg-7 animate-fade-in delay-1">
+        <div class="card p-4">
+            <h5 class="form-section-title"><i class="bi bi-grid-3x3-gap me-2"></i>Select Your Seat</h5>
+            
+            <!-- Screen -->
+            <div class="screen-container">
+                <div class="screen"></div>
+                <span class="screen-label">Screen</span>
+            </div>
+            
+            <!-- Seats -->
+            <div class="seats-container">
+                {% set rows = ['A', 'B', 'C', 'D', 'E'] %}
+                {% for row in rows %}
+                <div class="seat-row">
+                    <span class="row-label">{{ row }}</span>
+                    {% for seat in seats %}
+                        {% if seat.seat_number.startswith(row) %}
+                        <button type="button" 
+                                class="seat {% if seat.is_booked %}booked{% else %}available{% endif %}"
+                                data-seat-id="{{ seat.id }}"
+                                data-seat-number="{{ seat.seat_number }}"
+                                {% if seat.is_booked %}disabled{% endif %}>
+                            {{ seat.seat_number[1:] }}
+                        </button>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="row-label">{{ row }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Legend -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-seat available"></div>
+                    <span>Available</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-seat selected"></div>
+                    <span>Selected</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-seat booked"></div>
+                    <span>Booked</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Booking Form -->
+    <div class="col-lg-5 animate-fade-in delay-2">
+        <div class="booking-form-card">
+            <h5 class="form-section-title"><i class="bi bi-person-badge me-2"></i>Booking Details</h5>
+            
+            <form action="{{ url_for('create_booking_form') }}" method="POST" id="booking-form">
+                <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                <input type="hidden" name="seat_id" id="seat_id" value="">
+                
+                <div class="mb-4">
+                    <label class="form-label">Selected Seat</label>
+                    <div id="selected-seat-display">
+                        <span id="seat-text">Select a seat</span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="user_name" class="form-label">Your Name *</label>
+                    <input type="text" class="form-control" id="user_name" name="user_name" 
+                           placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="user_email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="user_email" name="user_email" 
+                           placeholder="Enter your email">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="showtime" class="form-label">Showtime</label>
+                    <input type="datetime-local" class="form-control" id="showtime" name="showtime">
+                </div>
+                
+                <button type="submit" class="btn btn-gold w-100" id="submit-btn" disabled>
+                    <i class="bi bi-ticket-perforated me-2"></i>Confirm Booking
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const seats = document.querySelectorAll('.seat.available');
+        const seatIdInput = document.getElementById('seat_id');
+        const seatText = document.getElementById('seat-text');
+        const submitBtn = document.getElementById('submit-btn');
+        let selectedSeat = null;
+        
+        seats.forEach(seat => {
+            seat.addEventListener('click', function() {
+                // Remove selection from previous seat
+                if (selectedSeat) {
+                    selectedSeat.classList.remove('selected');
+                }
+                
+                // If clicking the same seat, deselect it
+                if (selectedSeat === this) {
+                    selectedSeat = null;
+                    seatIdInput.value = '';
+                    seatText.textContent = 'Select a seat';
+                    submitBtn.disabled = true;
+                    return;
+                }
+                
+                // Select new seat
+                this.classList.add('selected');
+                selectedSeat = this;
+                seatIdInput.value = this.dataset.seatId;
+                seatText.textContent = 'Seat ' + this.dataset.seatNumber;
+                submitBtn.disabled = false;
+            });
+        });
+        
+        // Form validation
+        document.getElementById('booking-form').addEventListener('submit', function(e) {
+            if (!seatIdInput.value) {
+                e.preventDefault();
+                alert('Please select a seat before booking.');
+            }
+        });
+    });
+</script>
+{% endblock %}
+

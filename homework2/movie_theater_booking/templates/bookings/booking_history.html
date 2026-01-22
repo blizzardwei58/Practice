@@ -1,0 +1,312 @@
+{% extends 'bookings/base.html' %}
+
+{% block title %}Booking History - CineBooker{% endblock %}
+
+{% block extra_css %}
+<style>
+    .booking-card {
+        background: var(--dark-card);
+        border: 1px solid rgba(212, 175, 55, 0.1);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .booking-card:hover {
+        border-color: rgba(212, 175, 55, 0.3);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .booking-id {
+        background: var(--gradient-gold);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+    
+    .booking-movie-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.4rem;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .booking-detail {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        margin-bottom: 0.3rem;
+    }
+    
+    .booking-detail i {
+        color: var(--primary-gold);
+        width: 20px;
+    }
+    
+    .seat-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--gradient-gold);
+        color: var(--dark-bg);
+        font-weight: 700;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 1.1rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 5rem 2rem;
+    }
+    
+    .empty-state i {
+        font-size: 6rem;
+        color: var(--primary-gold);
+        opacity: 0.3;
+        margin-bottom: 1.5rem;
+    }
+    
+    .empty-state h3 {
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, var(--dark-card) 0%, var(--dark-card-hover) 100%);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .stats-number {
+        font-family: 'Playfair Display', serif;
+        font-size: 3rem;
+        font-weight: 700;
+        background: var(--gradient-gold);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .stats-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .cancel-btn {
+        background: transparent;
+        border: 1px solid var(--accent-red);
+        color: var(--accent-red);
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+    
+    .cancel-btn:hover {
+        background: var(--accent-red);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header animate-fade-in">
+    <h1><i class="bi bi-ticket-perforated"></i> My Bookings</h1>
+    <p>View and manage your movie reservations</p>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4 animate-fade-in delay-1">
+        <div class="stats-card">
+            <div class="stats-number">{{ bookings|length }}</div>
+            <div class="stats-label">Total Bookings</div>
+        </div>
+    </div>
+    <div class="col-md-4 animate-fade-in delay-2">
+        <div class="stats-card">
+            <div class="stats-number">{{ bookings|selectattr('showtime')|list|length }}</div>
+            <div class="stats-label">Upcoming Shows</div>
+        </div>
+    </div>
+    <div class="col-md-4 animate-fade-in delay-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ bookings|map(attribute='movie')|unique|list|length }}</div>
+            <div class="stats-label">Movies Watched</div>
+        </div>
+    </div>
+</div>
+
+<!-- Bookings List -->
+{% if bookings %}
+<div class="row">
+    <div class="col-12">
+        <h5 class="mb-4" style="color: var(--text-secondary);">
+            <i class="bi bi-list-ul me-2" style="color: var(--primary-gold);"></i>
+            All Reservations
+        </h5>
+    </div>
+    
+    {% for booking in bookings %}
+    <div class="col-lg-6 animate-fade-in delay-{{ loop.index % 4 + 1 }}">
+        <div class="booking-card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <span class="booking-id">Booking #{{ booking.id }}</span>
+                    <h4 class="booking-movie-title">{{ booking.movie.title }}</h4>
+                    
+                    <div class="booking-detail">
+                        <i class="bi bi-person"></i>
+                        <span>{{ booking.user_name }}</span>
+                    </div>
+                    
+                    {% if booking.user_email %}
+                    <div class="booking-detail">
+                        <i class="bi bi-envelope"></i>
+                        <span>{{ booking.user_email }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="booking-detail">
+                        <i class="bi bi-calendar-check"></i>
+                        <span>Booked: {{ booking.booking_date.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                    </div>
+                    
+                    {% if booking.showtime %}
+                    <div class="booking-detail">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Showtime: {{ booking.showtime.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-4 text-center mt-3 mt-md-0">
+                    <div class="seat-badge mb-3">
+                        <i class="bi bi-grid-3x3-gap me-2"></i>{{ booking.seat.seat_number }}
+                    </div>
+                    <br>
+                    <button class="cancel-btn" onclick="cancelBooking({{ booking.id }})">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state animate-fade-in">
+    <i class="bi bi-ticket-perforated-fill"></i>
+    <h3>No Bookings Yet</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+        You haven't made any reservations. Start by browsing our movie collection!
+    </p>
+    <a href="{{ url_for('movie_list') }}" class="btn btn-gold">
+        <i class="bi bi-collection-play me-2"></i>Browse Movies
+    </a>
+</div>
+{% endif %}
+
+<!-- API Reference -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card animate-fade-in">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-code-slash me-2" style="color: var(--primary-gold);"></i>
+                    Booking API Endpoints
+                </h5>
+                <p class="card-text">Manage bookings programmatically:</p>
+                <div class="table-responsive">
+                    <table class="table table-borderless mb-0">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Endpoint</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="badge bg-success">GET</span></td>
+                                <td><code>/api/bookings</code></td>
+                                <td>Get all bookings</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-success">GET</span></td>
+                                <td><code>/api/bookings/&lt;id&gt;</code></td>
+                                <td>Get specific booking</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-primary">POST</span></td>
+                                <td><code>/api/bookings</code></td>
+                                <td>Create new booking</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-danger">DELETE</span></td>
+                                <td><code>/api/bookings/&lt;id&gt;</code></td>
+                                <td>Cancel booking</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-success">GET</span></td>
+                                <td><code>/api/bookings/user/&lt;name&gt;</code></td>
+                                <td>Get user's bookings</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-success">GET</span></td>
+                                <td><code>/api/seats</code></td>
+                                <td>Get all seats</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-success">GET</span></td>
+                                <td><code>/api/seats/available</code></td>
+                                <td>Get available seats</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function cancelBooking(bookingId) {
+        if (confirm('Are you sure you want to cancel this booking?')) {
+            fetch(`/api/bookings/${bookingId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    // Reload the page to reflect changes
+                    window.location.reload();
+                } else {
+                    alert('Error cancelling booking');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error cancelling booking');
+            });
+        }
+    }
+</script>
+{% endblock %}
+
+
